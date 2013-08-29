@@ -1,0 +1,72 @@
+<html> 
+<meta name="viewport" content="width=device-width, maximum-scale=0.5" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-touch-fullscreen" content="yes" />
+<link type='text/css' rel='stylesheet' href="css/main.css" />
+<link href='http://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>
+<script type="text/javascript" src="js/class_helpers.js"></script>
+<script type="text/javascript" src="data/levels.json"></script>
+<script type="text/javascript" src="js/entity.js"></script>
+<script type="text/javascript" src="js/jquery.js"></script>
+<script type="text/javascript" src="js/game_class.js"></script>
+<script type="text/javascript" src="js/player_class.js"></script>
+<script type="text/javascript" src="js/utils.js"></script>
+<script type="text/javascript" src="js/sprite_class.js"></script>
+<script type="text/javascript" src="js/animation.js"></script>
+<script type="text/javascript" src="js/state_machine.js"></script>
+<script type="text/javascript" src="js/world.js"></script>
+<script type="text/javascript" src="js/room.js"></script>
+<script type="text/javascript" src="js/level_template.js"></script>
+<script type="text/javascript" src="js/bullet.js"></script>
+<script type="text/javascript" src="js/titlescreen.js"></script>
+<script type="text/javascript" src="js/missionscreen.js"></script>
+<script type="text/javascript" src="js/gameoverscreen.js"></script>
+<script type="text/javascript" src="js/NPC.js"></script>
+<script type="text/javascript" src="js/aStar.js"></script>
+<script type="text/javascript" src="js/timer.js"></script>
+<script type="text/javascript" src="js/success.js"></script>
+<script type="text/javascript" src="js/blossom.js"></script>
+<body>
+    <br>
+    <div id="timer"></div>
+    <br>
+    <div id="content"></div>
+    <canvas id="canvas" width="500" height="500" ></canvas>
+</body> 
+<script>
+var gamedata = {}
+var timer = new Timer();
+var startTime = timer.getSeconds();
+var fpsCount = 0;
+var fps = fpsCount;
+
+Game = new Game(fps);
+
+// Test for keyup and keydown events and run corresponding function in Game Class.
+document.onkeydown = function(e){
+//    e.preventDefault();
+    Game.keydown(e);
+};
+
+document.onkeyup = function(e){
+    Game.keyup(e);
+};
+
+// Start the game loop
+var draw = function(timeStamp){
+    window.requestAnimationFrame(draw, Game.canvas);
+	timer.update();
+	if (timeStamp !== timer.getSeconds()) {
+		fps = fpsCount;
+		fpsCount = 0;
+	} else {
+		fpsCount++;
+	}
+    Game.context.clearRect(0, 0, Game.canvas.width, Game.canvas.height);
+    Game.update();
+    Game.draw(timer);
+};
+
+draw(startTime);
+</script>
+</html> 

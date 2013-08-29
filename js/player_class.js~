@@ -1,0 +1,239 @@
+function Player(World){
+    // Init
+    this.world = World;
+    this.game = World.game;
+    this.Init();    
+};
+
+Player.prototype.Init = function(){
+    this.startX = 250;
+    this.startY = 0;
+    this.x = this.startX;
+    this.y = this.startY;
+    this.offset = 0;
+    this.keys = {};
+
+
+    // Physics variables
+    this.vx = 0;
+    this.vy = 0;
+
+    // Keyboard Variables
+    this.leftKey = 37;
+    this.upKey = 38;
+    this.rightKey = 39;
+    this.downKey = 40;
+    this.fireKey = 32;
+    this.pauseKey = 80;  //Pause button 'p'
+
+    // Key detection
+    this.right = false;
+    this.left = false;
+    this.up = false;
+    this.down = false;
+    this.facingleft = true;
+
+    this.state = {
+        _current: 0,
+        IDLE: 0,
+        LANDED: 1,
+        JUMPING: 2,
+        FALLING: 3,  
+        WALKING: 4   
+    }
+
+    // Animation
+    this.image = new Image();
+    this.image.src = 'img/character.png';
+    var offsetY = 48,
+        width = 32,
+        height = 48;
+    // image, sourceX, sourceY, sourceWidth, sourceHeight, frameCount, description, zIndex.
+    this.animation = new Animation(this.game);
+    this.animation.action['look_left'] = new Sprite(this.image, 0, offsetY*1, width, height, 1, "face_left", this.zIndex);
+    this.animation.action['look_right'] = new Sprite(this.image, 0, offsetY*2, width, height, 1, "face_right", this.zIndex);
+    this.animation.action['move_left'] = new Sprite(this.image, 0, offsetY*1, width, height, 3, "walk_left", this.zIndex);
+    this.animation.action['move_right'] = new Sprite(this.image, 0, offsetY*2, width, height, 3, "walk_right", this.zIndex);
+    this.animation.action['move_up'] = new Sprite(this.image, 0, offsetY*3, width, height, 3, "walk_up", this.zIndex);
+    this.animation.action['move_down'] = new Sprite(this.image, 0, 0, width, height, 3, "walk_down", this.zIndex);
+    this.animation.action['idle'] = new Sprite(this.image, 0, 0, width, height, 1, "idle", this.zIndex);
+    this.animation.set(this.animation.action['idle'], 1);
+    this.idle = true;
+
+    // Collision
+    var size = 5;
+    this.collision_points = {}
+    this.collision_points['center'] = {x: 0, y: 0};
+    this.collision_points['left'] = {x: 0 - (this.animation.widthofimage/2) + (size/2), y: 0};
+    this.collision_points['right'] = {x: 0 + (this.animation.widthofimage/2) - (size), y: 0};
+    this.collision_points['top'] = {x: 0, y: 0 - (this.animation.heightofimage/2) + (size/2)};
+    this.collision_points['bottom'] = {x: 0, y: 0 - (this.animation.heightofimage/2) - (size/2)};
+    this.inventory = [];
+
+};
+
+Player.prototype.updateAnimation = function(){
+    // Update using function setAnimation(image, offsetX for sequence in spritesheet, offsetY for sequence in spritesheet, frameCount, fps)
+    if (this.state._current == this.state.DEAD){
+        this.animation.state._current = this.animation.state.PLAYONCE;
+        this.animation.set(this.animation.action['die'], 30);
+    } else if(this.idle){
+        if(this.facingleft){
+            this.animation.state._current = this.animation.state.LOOP;
+            this.animation.set(this.animation.action['look_left'], 30);
+        } else if(!this.facingleft){
+            this.animation.state._current = this.animation.state.LOOP;
+            this.animation.set(this.animation.action['look_right'], 30);
+        } else {
+            this.animation.state._current = this.animation.state.LOOP;
+            this.animation.set(this.animation.action['idle'], 30);
+        }
+    } else if (this.right){
+        this.animation.state._current = this.animation.state.LOOP;
+        this.animation.set(this.animation.action['move_right'], 30);
+
+    } else if (this.left){
+        this.animation.state._current = this.animation.state.LOOP;
+        this.animation.set(this.animation.action['move_left'], 30);
+
+    } else if (this.up){
+        if(this.facingleft){
+            this.animation.state._current = this.animation.state.LOOP;
+            this.animation.set(this.animation.action['move_left'], 30);
+        } else if(!this.facingleft){
+            this.animation.state._current = this.animation.state.LOOP;
+            this.animation.set(this.animation.action['move_right'], 30);
+        } 
+    } else if (this.down){
+        this.animation.state._current = this.animation.state.LOOP;
+        this.animation.set(this.animation.action['move_down'], 30);
+    }
+};
+
+// Update Method
+Player.prototype.update = function(dt){    
+    this.updateAnimation();
+    this.checkCollisions();
+    var top_tile = this.world.getTile(this.collision_points['top'].x, this.collision_points['top'].y);
+    var bottom_tile = this.world.getTile(this.collision_points['bottom'].x, this.collision_points['bottom'].y);
+    var left_tile = this.world.getTile(this.collision_points['left'].x, this.collision_points['left'].y);
+    var right_tile = this.world.getTile(this.collision_points['right'].x, this.collision_points['right'].y);
+
+    if(bottom_tile == 0 || bottom_tile == undefined){
+        this.vy += 0.5;
+    } else if(this.vy != -6){
+        this.up = false;
+        this.keys['jump'] = false;  
+        this.vy = 0;
+    }
+
+    if(left_tile > 0){
+        this.vy += 0.5;
+        this.x += 0.5;
+    }
+    
+    if(right_tile > 0){
+        this.vy += 0.5;
+        this.x -= 0.5;
+    }
+
+    if(top_tile > 0 && bottom_tile == 0){
+        this.vy += 0.5;
+    } else if(top_tile > 0 && bottom_tile > 0){
+        this.vy = 0;
+    }
+
+    this.y += this.vy;
+
+ //   this.Friction(dt);
+};
+
+
+Player.prototype.Friction = function(dt){
+    if(this.state._current == this.state.IDLE && this.vx > 0){
+        this.vx += -this.game.friction * dt;
+    }    
+};
+
+Player.prototype.keydown = function (event) {
+   // console.log('Pressing', event.keyCode);
+    switch (event.keyCode) {
+        case 37: //left
+        this.idle = false;
+        this.left = true;
+        this.facingleft = true;
+        this.keys['left'] = true;
+        break;
+          
+        case 39: //right
+        this.idle = false;
+        this.right = true;
+        this.facingleft = false;
+        this.keys['right'] = true;
+        break;
+
+        case 38: //up
+        this.idle = false;
+        this.up = true;
+        if(this.up && !this.keys['jump']){
+            this.keys['jump'] = true;
+            this.vy = -6;
+        }
+        break;
+    }
+};
+
+Player.prototype.keyup = function (event) {
+    switch (event.keyCode) {
+        case 37: //left
+        this.left = false;
+        this.idle = true;
+        this.facingleft = true;
+        this.keys['left'] = false;
+        break;
+        case 39: //right
+        this.right = false;
+        this.idle = true;
+        this.facingleft = false;
+        this.keys['right'] = false;
+        break;
+        case 38: //up
+        this.idle = true;
+        this.up = false;
+        break;
+    }
+};
+
+Player.prototype.checkCollisions = function(){
+    // If player has health then update
+    var size = 5;
+    this.collision_points['center'] = {x: this.x + (this.animation.widthofimage/2), y: this.y};
+    this.collision_points['left'] = {x: this.x, y: this.y};
+    this.collision_points['right'] = {x: this.x + this.animation.widthofimage, y: this.y};
+    this.collision_points['top'] = {x: this.x + (this.animation.widthofimage/2), y: this.y - (this.animation.heightofimage/2)};
+    this.collision_points['bottom'] = {x: this.x + (this.animation.widthofimage/2), y: this.y + (this.animation.heightofimage/2)};
+};
+
+Player.prototype.draw = function(dt, context){
+    context.save();
+    context.translate(this.x + this.animation.widthofimage/2, this.y);
+    this.animation.Play(context);
+    context.restore();
+    this.debug(context);
+
+};
+
+Player.prototype.debug = function(context){
+    context.fillStyle="red"
+    var size = 5;
+    // Middle
+    context.fillRect(this.collision_points['center'].x, this.collision_points['center'].y, size, size)
+    // Left
+    context.fillRect(this.collision_points['left'].x, this.collision_points['left'].y, size, size);
+    // Right
+    context.fillRect(this.collision_points['right'].x, this.collision_points['right'].y, size, size);
+    // Top
+    context.fillRect(this.collision_points['top'].x, this.collision_points['top'].y, size, size);
+    // Bottom
+    context.fillRect(this.collision_points['bottom'].x, this.collision_points['bottom'].y, size, size);
+};

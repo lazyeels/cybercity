@@ -1,0 +1,83 @@
+var World = function(Game){
+    this.game = Game;    
+    this.player = new Player(this);
+    this.npc = new NPC(this);
+
+    this.sky = new Image();
+    this.sky.src = 'img/sky.png';
+    this.state = {
+        _current: 0,
+        DEFAULT: 0,
+        CHANGE: 1,
+        GAMEOVER: 2,
+    }
+
+    this.level = new Level(this.game);
+   // this.Init();
+};
+
+World.prototype.Init = function(){
+    this.player.y = 0;
+    this.state._current = this.state.DEFAULT;
+
+    this.level.Init();
+};
+
+World.prototype.update = function(dt){
+    if(this.state._current!== this.state.GAMEOVER){
+        this.level.update(dt,0,0);
+        this.player.update(dt, this.level.scroll.x, this.level.scroll.y);
+        var offsetX = (this.game.canvas.width/this.level.tile.width) - (this.player.x/this.level.tile.width);
+        var offsetY = (this.game.canvas.height/this.level.tile.height) - (this.player.y/this.level.tile.height);
+        //this.level.scroll.x = -Math.floor(offsetX*32);
+        this.level.scroll.y = -Math.floor(offsetY*32);
+        if(this.player.keys['left']){
+            this.level.scroll.x -= 5;
+        }
+        if(this.player.keys['right']){
+            this.level.scroll.x += 5;
+        }
+    }
+};
+
+World.prototype.draw = function(dt, context){
+    context.drawImage(this.sky, 0, 0);
+    this.level.draw(dt, context, 0, 0);
+    if(this.level.current_room){
+        context.font = 'italic 20pt Calibri';
+        context.fillStyle = "rgba(0,0,0,1)";
+        context.fillText(this.level.current_room.label, 150, 100);
+    }
+    this.player.draw(dt, context, this.level.scroll.x, this.level.scroll.y);
+};
+
+World.prototype.OnEnter = function(params){
+
+};
+
+World.prototype.OnExit = function(params){
+
+};
+
+World.prototype.keydown = function(e){
+    if(this.state._current == this.state.GAMEOVER){
+        this.Init();
+    } else {
+        this.player.keydown(e);
+    }
+};
+
+World.prototype.keyup = function(e){
+    this.player.keyup(e);
+};
+
+
+World.prototype.getTile = function(x, y){
+    var tileX = Math.floor((x/this.level.tile.width) + (this.level.scroll.x)/32),
+        tileY = Math.floor((y/this.level.tile.height) + (this.level.scroll.y)/32);
+    try {
+        return this.level.map[1][tileX][tileY];
+    } catch(err) {
+        return 0;
+    }
+};

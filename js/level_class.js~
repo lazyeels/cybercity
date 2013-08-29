@@ -1,0 +1,156 @@
+var Level = function(Game){
+    this.game = Game;
+    this.id = 0;
+    this.tileset = new Image();
+    this.tileset.src = "img/terrain.png";
+    this.objects = new Image();
+    this.objects.src = "img/foreground.png";
+
+    this.map = {
+        1:[
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0]],
+        2:[
+        [0,0,0,0,0,0,0,0,1,0],
+        [0,0,0,0,0,0,0,0,3,0],
+        [0,0,0,0,0,0,0,0,2,0],
+        [0,0,0,0,0,0,1,0,3,0],
+        [0,0,0,0,0,0,4,0,2,0],
+        [0,0,0,0,0,0,0,0,3,0],
+        [0,0,0,0,0,0,0,0,2,0],
+        [0,0,0,0,0,1,0,0,3,0],
+        [0,0,0,0,0,2,0,0,2,0],
+        [0,0,0,0,0,3,0,0,3,0],
+        [0,0,0,0,0,4,0,0,2,0],
+        [0,0,0,0,0,0,0,0,3,0],
+        [0,0,0,0,0,0,1,0,2,0],
+        [0,0,0,0,0,0,3,0,3,0],
+        [0,0,0,0,0,0,2,0,2,0],
+        [0,0,0,1,0,0,4,0,3,0],
+        [0,0,0,4,0,0,0,0,2,0],
+        [0,0,0,0,0,0,0,0,3,0],
+        [0,0,0,0,0,0,0,0,2,0],
+        [0,0,0,0,0,0,0,0,4,0]],
+        3:[
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,2,0,0],
+        [0,0,0,0,0,0,0,1,0,0],
+        [0,0,0,0,1,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,1,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,2,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,3,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0]],
+
+    };
+
+    this.Init();
+};
+
+Level.prototype.Init = function(){
+    this.tilemap = this.map[1];
+
+    this.width = this.tilemap[0].length;
+    this.height = this.tilemap.length;
+
+    this.tile = {
+  	width: 32,
+    	height: 32
+    }
+
+    this.grid = {
+	    width: this.tilemap[0].length,
+	    height: this.tilemap.length
+    }
+
+    this.scroll = {
+	    x: -this.grid.width/2,
+	    y: -this.grid.height/2
+    }
+};
+
+Level.prototype.ScrollMap = function(focusOn){
+    
+};
+
+Level.prototype.update = function(dt, xScroll, yScroll) {
+    this.startRow = Math.floor(this.scroll.y / this.tile.height);
+    this.startCol = Math.floor(this.scroll.x / this.tile.width);
+    this.rowCount = this.startRow + Math.floor(this.game.canvas.height / (this.tile.height/2));
+    this.colCount = this.startCol + Math.floor(this.game.canvas.width / (this.tile.width/2));
+};
+
+Level.prototype.draw = function(dt, context, xScroll, yScroll) {
+    for (var row = this.startRow; row < this.rowCount; row++) {
+        for (var col = this.startCol; col < this.colCount; col++) {
+            var tilePositionX = (this.tile.width * col);
+  	    var tilePositionY = (this.tile.height * row);
+            
+            tilePositionX -= this.scroll.x;
+ 	    tilePositionY -= this.scroll.y;
+             
+            // Draw grass and water
+            try {
+                this.tilemap = this.map[1]; 
+                var tileID = this.tilemap[col][row];
+                context.drawImage(
+                    this.tileset, 
+                    tileID * this.tile.width, 
+                    0, 
+                    this.tile.width, 
+                    this.tile.height, 
+                    tilePositionX, 
+                    tilePositionY,
+                    this.tile.width, 
+                    this.tile.height
+                );
+                this.tilemap = this.map[2];
+                var tileID = this.tilemap[col][row];
+                context.drawImage(
+                    this.objects, 
+                    tileID * this.tile.width, 
+                    0, 
+                    this.tile.width, 
+                    this.tile.height, 
+                    tilePositionX, 
+                    tilePositionY,
+                    this.tile.width, 
+                    this.tile.height
+                );
+
+            } catch(err) {
+                continue;
+            }
+        }
+    }
+};
+

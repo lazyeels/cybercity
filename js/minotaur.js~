@@ -1,0 +1,173 @@
+function Enemy(Game){
+    // Init
+    this.game = Game;
+    this.Init();
+};
+
+Enemy.prototype.Init = function(){
+    this.width = 16;
+    this.height = 32;
+    this.radius = 16;
+    this.x = 2  * this.game.level.tile.width;
+    this.y = 8 * this.game.level.tile.height;
+    this.speed = 32;
+
+    // Physics variables
+    this.vx = 0;
+    this.vy = 0;
+    this.color = "brown";
+    this.eye_color = "red"; 
+    
+    // Key detection
+    this.right = false;
+    this.left = false;
+    this.up = false;
+    this.down = false;
+
+    this.state = {
+        _current: 0,
+        IDLE: 0,
+        LEFT: 1,
+        RIGHT: 2,
+        UP: 3,
+        DOWN: 4   
+    }
+
+    this.level = this.game.level;
+};
+
+// Update Method
+Enemy.prototype.update = function(dt){
+    this.isPassable([this.x, this.y])
+
+    //this.Move(dt);
+    //this.findPlayer();
+};
+
+Enemy.prototype.callWorker = function(path, callback) {
+    var w = new Worker('js/aStar.js');
+    var self = this.game;
+    w.postMessage({
+	tileMap: self.level.tilemap,
+        grid: {
+	    width: self.level.grid.width,
+	    height: self.level.grid.height
+	},
+	start: path.start,
+	stop: path.stop
+    });
+    w.onmessage = callback;
+};
+
+Enemy.prototype.processWorkerResults = function(e) {
+    if (e.data.length > 0) {
+        console.log(e.data)
+	for (var i = 0, len = e.data.length; i < len; i++) {
+            console.log(e)
+	    if (this.game.level.tilemap[e.data[i].x] === undefined) {
+		this.game.level.tilemap[e.data[i].x] = [];
+	    }
+
+	    this.game.level.tilemap[e.data[i].x][e.data[i].y] = 0;
+	}
+    }
+};
+
+Enemy.prototype.findPlayer = function(xScroll, yScroll) {
+    var path = {};
+    var self = this.game;
+    var minotaur = this;
+    
+    path.start = {x: minotaur.tileX, y: minotaur.tileY};
+    path.stop = {x: self.player.tile.x, y: self.player.tile.y};
+    this.callWorker(path, minotaur.processWorkerResults);
+    console.log(path.start, minotaur.tileX)
+}
+
+Enemy.prototype.Move = function(dt){
+    // Move up
+    if(this.state._current==this.state.UP){
+        // Check Boundary
+        var newposition = [this.x, this.y - this.speed];
+        var passable = this.isPassable(newposition)
+        if(passable){  
+            this.y = newposition[1];
+        }
+    }
+    // Move down
+    if(this.state._current==this.state.DOWN){
+        // Check Boundary
+        var newposition = [this.x, this.y + this.speed];
+        var passable = this.isPassable(newposition)
+        if(passable){
+            this.y = newposition[1];
+        } 
+    }
+    // Move left
+    if(this.state._current==this.state.LEFT){
+        this.facingleft = true;
+        this.facingright = false;
+        // Check Boundary
+        var newposition = [this.x - this.speed, this.y];
+        var passable = this.isPassable(newposition)
+        if(passable){
+            this.x = newposition[0];
+        } 
+    }
+    // Move right
+    if(this.state._current==this.state.RIGHT){
+        this.facingleft = false;
+        this.facingright = true;
+        // Check Boundary
+        var newposition = [this.x + this.speed, this.y];
+        var passable = this.isPassable(newposition)
+        if(passable){
+            this.x = newposition[0];
+        }
+    }
+};
+
+Enemy.prototype.isPassable = function(newposition){
+    this.tileX = Math.floor((newposition[0])/32);
+    this.tileY = Math.floor((newposition[1])/32);
+
+    if(this.game.level.attributes[this.tileY][this.tileX]){
+        this.game.level.tilemap[this.tileY][this.tileX] = 1;
+    }
+    return this.game.level.attributes[this.tileY][this.tileX];
+};
+
+Enemy.prototype.draw = function(dt, context){
+
+    context.save();
+    context.translate(((this.x)-this.width)-this.game.level.scroll.x, (this.y - this.height/2)-this.game.level.scroll.y);
+    context.strokeRect(0, 0, this.width, this.height);
+
+
+    // Draw Enemy
+    context.fillStyle = this.color;
+    context.fillRect(0, 0, this.width, this.height);
+
+    // Looking right
+    if(this.right){
+        context.fillStyle = this.eye_color;
+        context.fillRect(this.width - 6, 5, 5, 5);
+    } else 
+    // Looking left
+    if(this.left){
+        context.fillStyle = this.eye_color;
+        context.fillRect(1, 5, 5, 5);
+    } else
+    // Looking forward
+    if(this.down){
+        context.fillStyle = this.eye_color;
+        context.fillRect(2, 5, 5, 5);
+        context.fillRect(9, 5, 5, 5);
+    } else if(this.up){
+    } else {
+        context.fillStyle = this.eye_color;
+        context.fillRect(2, 5, 5, 5);
+        context.fillRect(9, 5, 5, 5);
+    }
+    context.restore();
+};
